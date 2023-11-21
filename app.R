@@ -31,12 +31,14 @@ library(ggplot2)
 # Helpful resource: https://rstudio.github.io/shinydashboard/appearance.html
 # Helpful resource: https://educationshinyappteam.github.io/Style_Guide/staticImages.html
 
+
 # UI ----
 # Define UI for application that draws a histogram
 ui <- dashboardPage(skin = "black",
   dashboardHeader(
     title = "Aggregated Data"
   ),
+  
   
   # Create Tabs on Left Side of Page
   dashboardSidebar(
@@ -64,13 +66,14 @@ ui <- dashboardPage(skin = "black",
     )
   ),
   
+  
   dashboardBody(
     #use_theme(CNTI_theme),
     #tags$head(tags$style(HTML('
     #  .main-header .logo {
     #    font-family: "font", Times, "Times New Roman", serif;
     #    font-size: 18px;
-  #    }
+    #   }
     #'))),
     tags$head(tags$link(rel = "tab icon", href = "favicon.ico")),
     tags$style(HTML('
@@ -102,7 +105,6 @@ ui <- dashboardPage(skin = "black",
                 tags$style(".small-box.bg-blu { background-color: #D9DFDB; color: #000000; }"),
                 uiOutput("vb_table_count")),
             box(width = 5, style = "height:175px;", solidHeader = TRUE, title = "CNTI",
-                #HTML('<center><img src="CNTI_logo_tagline_redline.png"> "height:150px" </center>')),
                 tags$figure(
                   style="text-align: center;",
                   tags$img(src = "CNTI_logo_tagline_redline.png",
@@ -110,10 +112,11 @@ ui <- dashboardPage(skin = "black",
           
           fluidRow(
             box(width = 12, solidHeader = TRUE, title = "Table",
-                DTOutput("aggregate_table")) #background = "gray", 
+                DTOutput("aggregate_table")) 
       )
     )
   ),
+  
     # Map tab
     tabItem("map",
     fillPage(
@@ -127,6 +130,7 @@ ui <- dashboardPage(skin = "black",
       )
     )
   ),
+  
     # About tab
     tabItem(
       tabName = "about",
@@ -148,17 +152,19 @@ ui <- dashboardPage(skin = "black",
               a(href = "https://shiny.posit.co", "Shiny app", target = "_blank"),
               "may be found in the 'Source' section on the left-hand menu.
             We welcome any questions, and we thank you for visiting.")))
-          )
         )
-      ),
-  tabItem(
-    tabName = "source_code",
-    fluidPage(
-      fluidRow(
-        box(width = 12, solidHeader = TRUE, title = "Source Code",
-            mainPanel(
-              p("The source code for this Shiny app may be found",
-                a(href = "https://innovating.news/article/aggregated-country-data/", 
+      )
+    ),
+  
+    # Source tab
+    tabItem(
+      tabName = "source_code",
+      fluidPage(
+        fluidRow(
+          box(width = 12, solidHeader = TRUE, title = "Source Code",
+              mainPanel(
+                p("The source code for this Shiny app may be found",
+                  a(href = "https://github.com/cnti-global/aggregated_country_data_Shiny/blob/main/app.R", 
                   "here.", target = "_blank")))
             )
           )
@@ -169,6 +175,7 @@ ui <- dashboardPage(skin = "black",
   title = "Aggregated Data by CNTI", 
 )
 
+
 # Server -----
 # Define server logic required to draw a histogram
 server <- function(input, output) {
@@ -176,17 +183,20 @@ server <- function(input, output) {
   map_data <- read.csv("/Users/samueljens/Documents/Samuel Jens/CNTI Projects/CNTI_AggregatedData_App/mapdata.csv")
   #final_dat <- read.csv("/Users/samueljens/Documents/Samuel Jens/CNTI Projects/CNTI_AggregatedData_App/final_dat.csv")
   
+  
   # Remove cases I had to recode in Excel for interactive mapping 
   country_dat2 <- country_dat
   country_dat2 <- subset(country_dat, Country_Map != "Puerto Rico")
   country_dat2 <- subset(country_dat2, Country_Map != "Western Sahara") # Palestine?
   
-# Data tab ----
+
+  # Data tab ----
   output$country_filter <- renderUI({
     country_choices <- c("All", sort(unique(country_dat2$Country))) # Add condition to view all
     pickerInput("country_filter", "Select Country",
                 choices = country_choices)
   })
+  
   
   # Reactive data ----
   reactive_country_data <- reactive({
@@ -222,6 +232,7 @@ server <- function(input, output) {
                 scrollY = "30vh"))
   })
   
+  
   ####
   # Region filter
   output$region_filter <- renderUI({
@@ -229,6 +240,7 @@ server <- function(input, output) {
     pickerInput("region_filter", "Select Region",
                 choices = region_choices)
   })
+  
   
   # Value box
   output$vb_table_count <- renderValueBox({
@@ -248,8 +260,10 @@ server <- function(input, output) {
                 choices = map_choices)
   })
   
+  
   # Create map object
   map <- joinCountryData2Map(country_dat, joinCode = "NAME", nameJoinColumn = "Country_Map", nameCountryColumn = "Country_Map", verbose = T)
+  
   
   # Render reactive filter for map; selected by user
   user_decision <- reactive({
@@ -266,10 +280,11 @@ server <- function(input, output) {
               #addMiniMap()
   })
  
+  
   # Define color palette (https://rstudio.github.io/leaflet/colors.html)
   pal <- colorBin("Greens", domain = NULL, bins = 9) 
-  #pal <- colorBin("RdYlGn", domain = NULL, bins = 11)
 
+  
   # Generate map; color fill by user input
   observe({
     if(!is.null(input$map_filter)){
@@ -298,6 +313,7 @@ server <- function(input, output) {
         }
     })
 }
+
 
 # Run the application 
 shinyApp(ui = ui, server = server)
