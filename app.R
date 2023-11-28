@@ -20,8 +20,8 @@ library(DT)
 library(dplyr)
 library(tidyr)
 library(leaflet)
-library(rworldmap)
 library(sp)
+library(rworldmap)
 library(RColorBrewer)
 library(readr)
 library(ggplot2)
@@ -104,7 +104,7 @@ ui <- dashboardPage(skin = "black",
             box(width = 3, style = "height:175px;", solidHeader = TRUE, title = "Overview",
                 tags$style(".small-box.bg-blu { background-color: #D9DFDB; color: #000000; }"),
                 uiOutput("vb_table_count")),
-            box(width = 5, style = "height:175px;", solidHeader = TRUE, title = "CNTI",
+            box(width = 5, style = "height:175px;", solidHeader = TRUE, title = "Created by CNTI",
                 tags$figure(
                   style="text-align: center;",
                   tags$img(src = "CNTI_logo_tagline_redline.png",
@@ -150,7 +150,7 @@ ui <- dashboardPage(skin = "black",
               Users may scroll over countries to view specific values."),
             p("The source code for creating this",
               a(href = "https://shiny.posit.co", "Shiny app", target = "_blank"),
-              "may be found in the 'Source' section on the left-hand menu.
+              "may be found in the 'Code' section on the left-hand menu.
             We welcome any questions, and we thank you for visiting.")))
         )
       )
@@ -179,15 +179,13 @@ ui <- dashboardPage(skin = "black",
 # Server -----
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-  country_dat <-  read.csv("/Users/samueljens/Documents/Samuel Jens/CNTI Projects/CNTI_AggregatedData_App/data-XRiDf.csv")
-  map_data <- read.csv("/Users/samueljens/Documents/Samuel Jens/CNTI Projects/CNTI_AggregatedData_App/mapdata.csv")
-  #final_dat <- read.csv("/Users/samueljens/Documents/Samuel Jens/CNTI Projects/CNTI_AggregatedData_App/final_dat.csv")
+  country_dat <-  read.csv("CNTI_app_data.csv")
   
   
   # Remove cases I had to recode in Excel for interactive mapping 
   country_dat2 <- country_dat
   country_dat2 <- subset(country_dat, Country_Map != "Puerto Rico")
-  country_dat2 <- subset(country_dat2, Country_Map != "Western Sahara") # Palestine?
+  country_dat2 <- subset(country_dat2, Country_Map != "Western Sahara") 
   
 
   # Data tab ----
@@ -220,11 +218,11 @@ server <- function(input, output) {
         "Internet Penetration" = Internet_penetration,
         "Freedom House internet freedom status" = FreedomHouse_internet_freedom_status,
         "V-Dem government attempts at internet censorship (0-4 scale)" = V.Dem_gov_attempts_internet_censorship,
-        "V-Dem degree of journalist harassment (0-4 scale)" = V.Dem_degree_journalist_harassment,
+        "Tortoise Global AI Index ranking (1-62)" = Tortoise_Global_AI_Index_ranking,
         "V-Dem Freedom of Expression and Alt. Sources of Information Index (0-1 scale)" = V.Dem_Freedom_Expression_Alt_Sources_Info_Index,
         "RSF Global Press Freedom Index ranking (1-180)" = RSF_Global_Press_Freedom_Index_ranking,
         "RISJ overall trust in the news" = RISJ_overall_trust_news_percentage,
-        "Tortoise Global AI Index ranking (1-62)" = Tortoise_Global_AI_Index_ranking,
+        "V-Dem degree of journalist harassment (0-4 scale)" = V.Dem_degree_journalist_harassment,
         "CPJ count of journalists imprisoned or killed (yearly)" = CPJ_count_journalists_imprisoned_killed
         ) %>%
       datatable(rownames = F,
@@ -264,6 +262,13 @@ server <- function(input, output) {
   # Create map object
   map <- joinCountryData2Map(country_dat, joinCode = "NAME", nameJoinColumn = "Country_Map", nameCountryColumn = "Country_Map", verbose = T)
   
+  # Add in Gaza information manually -- some reason does not merge correctly
+  map@data$Country_Map[196] <- "Gaza"
+  map@data$Internet_penetration2[196] <- 75
+  map@data$V.Dem_gov_attempts_internet_censorship[196] <- 2.03
+  map@data$V.Dem_degree_journalist_harassment[196] <- 0.86
+  map@data$V.Dem_Freedom_Expression_Alt_Sources_Info_Index[196] <- 0.29
+    
   
   # Render reactive filter for map; selected by user
   user_decision <- reactive({
@@ -289,13 +294,11 @@ server <- function(input, output) {
   observe({
     if(!is.null(input$map_filter)){
       leafletProxy("worldmap", data = map) %>%
-      #leaflet(data = map_data) %>%
         addTiles() %>% 
-        #clearShapes() %>%
+        clearShapes() %>%
         setView(lng = 10.00, lat = 22.00, zoom = 2) %>%
         addPolygons(fill = TRUE,
                     fillColor = ~pal(user_decision()), # Key
-                    #fillColor = 'green',
                     weight = 1,
                     opacity = .5,
                     color = "white",
