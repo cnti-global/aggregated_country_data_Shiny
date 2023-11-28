@@ -67,7 +67,7 @@ ui <- dashboardPage(skin = "black",
   ),
   
   
-  dashboardBody(
+  dashboardBody(tags$head( tags$meta(name = "viewport", content = "width=1600")),
     #use_theme(CNTI_theme),
     #tags$head(tags$style(HTML('
     #  .main-header .logo {
