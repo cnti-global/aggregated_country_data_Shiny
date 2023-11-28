@@ -207,7 +207,7 @@ server <- function(input, output) {
   
   # Country table ----
   output$aggregate_table <- renderDT({
-    reactive_country_data() %>%
+    data <- reactive_country_data() %>%
       select(
         Country,
         Region,
@@ -221,14 +221,42 @@ server <- function(input, output) {
         "Tortoise Global AI Index ranking (1-62)" = Tortoise_Global_AI_Index_ranking,
         "V-Dem Freedom of Expression and Alt. Sources of Information Index (0-1 scale)" = V.Dem_Freedom_Expression_Alt_Sources_Info_Index,
         "RSF Global Press Freedom Index ranking (1-180)" = RSF_Global_Press_Freedom_Index_ranking,
-        "RISJ overall trust in the news" = RISJ_overall_trust_news_percentage,
+        "RISJ overall trust in the news percentage" = RISJ_overall_trust_news_percentage,
         "V-Dem degree of journalist harassment (0-4 scale)" = V.Dem_degree_journalist_harassment,
         "CPJ count of journalists imprisoned or killed (yearly)" = CPJ_count_journalists_imprisoned_killed
-        ) %>%
-      datatable(rownames = F,
-                options = list(paging = T,
-                scrollY = "30vh"))
+      )
+    
+    # Modify column names with hyperlinks
+    col_names <- colnames(data)
+    col_names[which(col_names == "Region")] <- '<a href="https://unstats.un.org/unsd/methodology/m49/" target="_blank">Region</a>'
+    col_names[which(col_names == "Population")] <- '<a href="https://data.worldbank.org/indicator/SP.POP.TOTL" target="_blank">Population</a>'
+    col_names[which(col_names == "World Bank income group")] <- '<a href="https://datatopics.worldbank.org/world-development-indicators/the-world-by-income-and-region.html" target="_blank">World Bank income group</a>'
+    col_names[which(col_names == "V-Dem regime type")] <- '<a href="https://v-dem.net/documents/29/V-dem_democracyreport2023_lowres.pdf" target="_blank">V-Dem regime type</a>'
+    col_names[which(col_names == "WJP Rule of Law Index ranking (1-140)")] <- '<a href="https://worldjusticeproject.org/rule-of-law-index/global" target="_blank">WJP Rule of Law Index ranking (1-140)</a>'
+    col_names[which(col_names == "Internet Penetration")] <- '<a href="https://www.internetworldstats.com/stats1.htm" target="_blank">Internet Penetration</a>'
+    col_names[which(col_names == "Freedom House internet freedom status")] <- '<a href="https://freedomhouse.org/reports/freedom-world/freedom-world-research-methodology" target="_blank">Freedom House internet freedom status<a/>'
+    col_names[which(col_names == "V-Dem government attempts at internet censorship (0-4 scale)")] <- '<a href="https://v-dem.net/data/the-v-dem-dataset/" target="_blank">V-Dem government attempts at internet censorship (0-4 scale)<a/>'
+    col_names[which(col_names == "Tortoise Global AI Index ranking (1-62)")] <- '<a href="https://www.tortoisemedia.com/intelligence/global-ai/" target="_blank">Tortoise Global AI Index ranking (1-62)</a>'
+    col_names[which(col_names == "V-Dem Freedom of Expression and Alt. Sources of Information Index (0-1 scale)")] <- '<a href="https://v-dem.net/data/the-v-dem-dataset/" target="_blank">V-Dem Freedom of Expression and Alt. Sources of Information Index (0-1 scale)<a/>'
+    col_names[which(col_names == "RSF Global Press Freedom Index ranking (1-180)")] <- '<a href="https://rsf.org/en/methodology-used-compiling-world-press-freedom-index-2023?year=2023&data_type=general" target="_blank">RSF Global Press Freedom Index ranking (1-180)<a/>'
+    col_names[which(col_names == "RISJ overall trust in the news percentage")] <- '<a href="https://reutersinstitute.politics.ox.ac.uk/digital-news-report/2023" target="_blank">RISJ overall trust in the news percentatge<a/>'
+    col_names[which(col_names == "V-Dem degree of journalist harassment (0-4 scale)")] <- '<a href="https://v-dem.net/data/the-v-dem-dataset/" target="_blank">V-Dem degree of journalist harassment (0-4 scale)<a/>'
+    col_names[which(col_names == "CPJ count of journalists imprisoned or killed (yearly)")] <- '<a href="https://cpj.org/2022/12/attacks-on-the-press-in-2022/#interact" target="_blank">CPJ count of journalists imprisoned or killed (yearly)<a/>'
+    
+    datatable(
+      data,
+      rownames = FALSE,
+      escape = FALSE, # Allow HTML
+      options = list(paging = TRUE,
+                     scrollY = "30vh",
+                     autoWidth = FALSE,
+                     scrollX = TRUE,
+                     pageLength = 10),
+      colnames = col_names
+    )
   })
+  
+
   
   
   ####
@@ -260,7 +288,7 @@ server <- function(input, output) {
   
   
   # Create map object
-  map <- joinCountryData2Map(country_dat, joinCode = "NAME", nameJoinColumn = "Country_Map", nameCountryColumn = "Country_Map", verbose = T)
+  map <- joinCountryData2Map(country_dat, joinCode = "NAME", nameJoinColumn = "Country_Map", nameCountryColumn = "Country_Map", verbose = F)
   
   # Add in Gaza information manually -- some reason does not merge correctly
   map@data$Country_Map[196] <- "Gaza"
