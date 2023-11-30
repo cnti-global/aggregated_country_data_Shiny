@@ -7,51 +7,33 @@
 #    http://shiny.rstudio.com/
 #
 
-# Application developed by Samuel Jens, CNTI
-
 library(shiny)
 library(shinydashboard)
-library(shinydashboardPlus)
 library(shinyWidgets)
 library(shinythemes)
 library(fresh)
 
 library(DT)
 library(dplyr)
-library(tidyr)
-library(leaflet)
-library(sp)
-library(rworldmap)
-library(RColorBrewer)
-library(readr)
 library(ggplot2)
 
 
-# Helpful resource: https://stackoverflow.com/questions/56319618/implement-select-all-option-in-reactive-shiny
-# Helpful resource: https://rstudio.github.io/shinydashboard/appearance.html
-# Helpful resource: https://educationshinyappteam.github.io/Style_Guide/staticImages.html
-
-
-# UI ----
 # Define UI for application that draws a histogram
-ui <- dashboardPage(skin = "black",
+ui <- dashboardPage(
   dashboardHeader(
-    title = "Aggregated Data"
+    title = "Iterated Game"
   ),
-  
-  
-  # Create Tabs on Left Side of Page
   dashboardSidebar(
     sidebarMenu(
       menuItem(
-        tabName = "data",
-        text = "Data",
+        tabName = "game",
+        text = "Game",
         icon = icon("table")
       ),
       menuItem(
-        tabName = "map",
-        text = "Map",
-        icon = icon("globe")
+        tabName = "tournament",
+        text = "Tournament",
+        icon = icon("trophy")
       ),
       menuItem(
         tabName = "about",
@@ -67,284 +49,375 @@ ui <- dashboardPage(skin = "black",
   ),
   
   
-  dashboardBody(tags$head( tags$meta(name = "viewport", content = "width=1600")),
-    #use_theme(CNTI_theme),
-    #tags$head(tags$style(HTML('
-    #  .main-header .logo {
-    #    font-family: "font", Times, "Times New Roman", serif;
-    #    font-size: 18px;
-    #   }
-    #'))),
-    tags$head(tags$link(rel = "tab icon", href = "favicon.ico")),
-    tags$style(HTML('
-        .skin-black .main-header .navbar {
-    background-color: #A6A6A6;
-        }
-        .skin-black .main-header .logo {
-    background-color: #A6A6A6;
-    color: #333;
-    border-bottom: 0 solid transparent;
-    border-right: 1px solid #eee;
-        }
-.box-header.with-border {
-    border-bottom: 1px solid #53A5DC;
-}
-      .col-sm-8 {
-    width: 80%;
-}
-  ')),
+  dashboardBody(tags$head(tags$meta(name = "viewport", content = "width=1600")),
+                tags$head(tags$link(rel = "tab icon", href = "favicon.ico")),
     tabItems(
       tabItem(
-        tabName = "data",
+        tabName = "game",
         fluidPage(
           fluidRow(
-            box(width = 4, style = "height:175px;", solidHeader = TRUE, title = "Country Filter",
-                uiOutput("country_filter"),
-                uiOutput("region_filter")),
-            box(width = 3, style = "height:175px;", solidHeader = TRUE, title = "Overview",
-                tags$style(".small-box.bg-blu { background-color: #D9DFDB; color: #000000; }"),
-                uiOutput("vb_table_count")),
-            box(width = 5, style = "height:175px;", solidHeader = TRUE, title = "Created by CNTI",
-                tags$figure(
-                  style="text-align: center;",
-                  tags$img(src = "CNTI_logo_tagline_redline.png",
-                           width = 425)))),
-          
+            box(width = 3, status = "primary", solidHeader = TRUE, title = "Game Settings", 
+                uiOutput("Player1_Strategy"),
+                uiOutput("Player2_Strategy"),
+                uiOutput("Number_Rounds"),
+                div(align = "center", actionButton("button", "Play Game", style = 'color: #fff; background-color: #27ae60; padding:10px; font-size:120%')),
+                textOutput("text"), align = "center", style = "font-size:120%"),
+            box(width = 3, status = "primary", solidHeader = TRUE, title = "Results",
+                uiOutput("Player1_Cumulative"),
+                uiOutput("Player2_Cumulative"),
+                uiOutput("Game_Cumulative")),
+            box(width = 6, status = "primary", solidHeader = TRUE, title = "Plot of Game",
+                plotOutput("game_line_plot", height = "40vh")),
+          ),
           fluidRow(
-            box(width = 12, solidHeader = TRUE, title = "Table",
-                DTOutput("aggregate_table")) 
-      )
-    )
-  ),
-  
-    # Map tab
-    tabItem("map",
-    fillPage(
-      fluidRow(
-        box(width = 12, solidHeader = TRUE, title = "User Input",
-            uiOutput("map_filter")
+            box(width = 12, status = "primary", solidHeader = TRUE, title = "Results Table",
+                DTOutput("results_table"))
+          )
         )
       ),
-      fluidRow(box(width = 12, title = "Interactive Map",
-                   leafletOutput("worldmap", height = "65vh"))
-      )
-    )
-  ),
-  
-    # About tab
-    tabItem(
-      tabName = "about",
-      fluidPage(
-        fluidRow(
-          box(width = 12, solidHeader = TRUE, title = "About the Data",
-          mainPanel(
-            p("The data on this Shiny app are acquired from several sources. 
-              More information about the sources may be found on CNTI's website",
-              a(href = "https://innovating.news/article/aggregated-country-data/", 
-                "here.", target = "_blank"),
-              "Our aim in producing this tool is to allow users to interact with the data."),
-            p("The first 'Data' tab allows users to select specific countries or world regions to view in the table.
-              The value box updates to show how many countries are shown in the table."),
-            p("The 'Map' tab presents an interactive world map where users may select from a variety of variables.
-              The map updates and shades countries depending on the variable/column selected in the input window.
-              Users may scroll over countries to view specific values."),
-            p("The source code for creating this",
-              a(href = "https://shiny.posit.co", "Shiny app", target = "_blank"),
-              "may be found in the 'Code' section on the left-hand menu.
-            We welcome any questions, and we thank you for visiting.")))
+      
+      
+      # Tournament tab ----
+      tabItem(
+        tabName = "tournament",
+        fluidPage(
+          fluidRow(
+            box(width = 12, solidHeader = TRUE, title = "Tournament",
+                mainPanel(
+                  p("The code for creating and running an iterated prisoner's dilemma tournament is in development.")
+            )
+          )
         )
       )
     ),
-  
-    # Source tab
-    tabItem(
-      tabName = "source_code",
-      fluidPage(
-        fluidRow(
-          box(width = 12, solidHeader = TRUE, title = "Source Code",
-              mainPanel(
-                p("The source code for this Shiny app may be found",
-                  a(href = "https://github.com/cnti-global/aggregated_country_data_Shiny/blob/main/app.R", 
-                  "here.", target = "_blank")))
+
+      
+      # About Tab ----      
+      tabItem(
+        tabName = "about",
+        fluidPage(
+          fluidRow(
+            box(width = 12, solidHeader = TRUE, title = "About the Game",
+                mainPanel(
+                  p("This interactive application models the iterated prisoner's dilemma games by Robert Axelrod.
+                    Further information about the game may be found in his 1981 APSR article",
+                    a(href = "https://www.cambridge.org/core/journals/american-political-science-review/article/abs/emergence-of-cooperation-among-egoists/EEAB3C6460F5BC63A4DE813E1B010B21", "here.", target = "_blank"),
+                    "I also recommend his 1984 book titled", 
+                    a(href = "https://www.hachettebookgroup.com/titles/robert-axelrod/the-evolution-of-cooperation/9780465005642/?lens=basic-books", tags$em("The Evolution of Cooperation."), target = "_blank"), 
+                    "The basic premise of the prisoner's dilemma is that two actors, who may thought of as individuals, political parties, institutions, or nation states, must make a decision between cooperation and defection.
+                    In a game in which the players only interact once and must make a simultaneous decision, there is an incentive to defect based on the structured payoffs gained by each player.
+                    The structured payoffs for Axelrod's original games, and the ones implemented in this app, may be seen below. This figure may be found in his 1981 article linked above."),
+                  p("The row player, Player 1, has her payoffs listed first. The column player is Player 2. 
+                    From Player 1's perspective, she earns 3 if she cooperates (and if Player 2 cooperates) but 5 if she defects (and if Player 2 cooperates).
+                    Player 2 has the same perspective (should Player 1 also cooperate). Thus, there is an incentive for both players to defect."),
+                  tags$img(src = "Axelrod_1981_Cooperation.png", width = "500px", height = "400px"),
+                  p("However, this incentive to defect is particularly pronounced in a game played just one time. Should the game be played multiple times into the future, cooperation can develop.
+                    "),
+                  p("MORE DETAIL TO COME"),
+                  p("The source code for creating this",
+                    a(href = "https://shiny.posit.co", "Shiny app", target = "_blank"),
+                    "may be found in the 'Code' section on the left-hand menu.")))
+          )
+        )
+      ),
+      
+        tabItem(
+          tabName = "source_code",
+          fluidPage(
+            fluidRow(
+              box(width = 12, solidHeader = TRUE, title = "Source Code",
+                  mainPanel(
+                    p("The source code for this Shiny app may be found",
+                      a(href = "https://github.com/samueljens/TitForTatApp", 
+                        "here.", target = "_blank")))
             )
           )
         )
       )
     )
   ),
-  title = "Aggregated Data by CNTI", 
+  title = "Iterated Prisoner's Dilemma"
 )
 
-
-# Server -----
+# Server ----
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-  country_dat <-  read.csv("CNTI_app_data.csv")
+
+  ## Define the actions of players 
+  C <- "C" # cooperate
+  D <- "D" # defect
+  
+  ## Define unique strategies as functions
+  
+  # Cooperate on first move and then follow opponent's prior move
+  TitForTat <- function(history, opponent_history){
+    # First move
+    if(length(history) == 0){
+      return(C)
+    }
+    # React to the opponent's last move
+    if(tail(opponent_history, 1) == D){
+      return(D)
+    }
+    return(C)
+  }
   
   
-  # Remove cases I had to recode in Excel for interactive mapping 
-  country_dat2 <- country_dat
-  country_dat2 <- subset(country_dat, Country_Map != "Puerto Rico")
-  country_dat2 <- subset(country_dat2, Country_Map != "Western Sahara") 
+  # Cooperate on first move and then defect only after two opponent defections in a row
+  TitForTwoTat <- function(history, opponent_history){
+    if(length(history) == 0){
+      return(C)
+    }
+    if(length(history) == 1){
+      return(C)
+    }
+    if(length(history) >= 2){
+      if(tail(opponent_history, 2)[1] == D & tail(opponent_history, 2)[2] == D){
+        return(D)
+      }
+    }
+    return(C)
+  }
+  
+  
+  # Defect twice after other player defects then if other player cooperates cooperate
+  TwoTitForTat <- function(history, opponent_history){
+    if (length(history) == 0){
+      return(C)  # Cooperate on the first move
+    }
+    if (tail(opponent_history, 2)[1] == D & tail(opponent_history, 1) == D){
+      return(D)  # Defect twice in a row if the opponent defected in the last two moves
+    }
+    if (tail(opponent_history, 1) == C){
+      return(C)  # Cooperate if the opponent cooperated in the last move
+    }
+    return(D)  # Defect otherwise
+  }
+  
+  
+  # Completely random strategy that cooperates 50% of time
+  Random <- function(history, opponent_history) {
+    # Generate a random choice (C or D) with equal probability
+    random_decision <- sample(c(C, D), 1, prob = c(0.5, 0.5), replace = TRUE)
+    return(random_decision)
+  }
+  
+  
+  # Random strategy that favors cooperating 75% of time
+  RandomCooperator <- function(history, opponent_history) {
+    # Generate a random choice (C or D) with equal probability
+    random_decision <- sample(c(C, D), 1, prob = c(0.75, 0.25), replace = TRUE)
+    return(random_decision)
+  }
+  
+  
+  # Always defect
+  Defector <- function(history, opponent_history){
+    return(D)
+  }
+  
+  
+  # Grim trigger: cooperate until opponent defects then always defect
+  GrimTrigger <- function(history, opponent_history){
+    if(length(history) == 0){
+      return(C)
+    }
+    if("D" %in% opponent_history){
+      return("D")
+    }
+    return("C")
+  }
+  
+  
+  # Simple Identity ChecK, red75; here: https://www.lesswrong.com/posts/hamma4XgeNrsvAJv5/prisoner-s-dilemma-tournament-results
+  IdentityCheck <- function(history, opponent_history){
+    if (length(history) == 0){
+      return(C)  # Cooperate on the first move
+    }
+    if(length(history) >= 1 && length(history) <= 56){
+      if(tail(opponent_history, 1) == C){
+        return(C)
+      } else {
+        return(D)
+      }
+    }
+    if(length(history) == 57){
+      return(D) 
+    }
+    if(length(history) == 58){
+      if(all(history[0:57] == c(C, C, rep(D, 55))) && all(opponent_history[0:57] == c(C, C, rep(D, 55)))){
+        return(C)
+      } else {
+        return(D)
+      }
+    }
+    # Default: Cooperate
+    return(C)
+  }
   
 
-  # Data tab ----
-  output$country_filter <- renderUI({
-    country_choices <- c("All", sort(unique(country_dat2$Country))) # Add condition to view all
-    pickerInput("country_filter", "Select Country",
-                choices = country_choices)
+  # Define function to play iterated games
+  play_game <- function(player1_strategy, player2_strategy, rounds){
+    
+    results <- data.frame(Round = integer(), Player1 = character(), Player2 = character(), stringsAsFactors = FALSE)
+    
+    player1_history <- c()
+    player2_history <- c()
+    
+    for (i in 1:rounds) {
+      
+      # Get the actions of both players based on their strategies
+      player1_action <- player1_strategy(player1_history, player2_history)
+      player2_action <- player2_strategy(player2_history, player1_history)
+      
+      # Update the history
+      player1_history <- c(player1_history, player1_action)
+      player2_history <- c(player2_history, player2_action)
+      
+      # Print or store the results as needed
+      cat("Round:", i, "Player 1:", player1_action, "Player 2:", player2_action, "\n")
+      
+      results <- rbind(results, data.frame(Round = i, Player1 = player1_action, Player2 = player2_action))
+    }
+    
+    results$Player1_Payoff <- ifelse(results$Player1 == C & results$Player2 == C, 3,
+                                     ifelse(results$Player1 == C & results$Player2 == D, 0,
+                                            ifelse(results$Player1 == D & results$Player2 == C, 5,
+                                                   ifelse(results$Player1 == D & results$Player2 == D, 1, NA))))
+    
+    results <- within(results, Player1_Cumulative <- cumsum(Player1_Payoff))
+    
+    
+    results$Player2_Payoff <- ifelse(results$Player2 == C & results$Player1 == C, 3,
+                                     ifelse(results$Player2 == C & results$Player1 == D, 0,
+                                            ifelse(results$Player2 == D & results$Player1 == C, 5,
+                                                   ifelse(results$Player2 == D & results$Player2 == D, 1, NA))))
+    
+    results <- within(results, Player2_Cumulative <- cumsum(Player2_Payoff))
+    
+    
+    results$Total_Payoff <- as.numeric(results$Player1_Payoff + results$Player2_Payoff)
+    
+    
+    results <- within(results, Cumulative_Payoff <- cumsum(Total_Payoff))
+    
+    return(results)
+  }
+  
+  
+  decision_rules <- list(
+    "Tit for Tat" = TitForTat,
+    "Tit for Two Tat" = TitForTwoTat,
+    "Two Tit for Tat" = TwoTitForTat,
+    "Random 50/50" = Random,
+    "Random 75/25" = RandomCooperator,
+    "Defector" = Defector,
+    "Grim Trigger" = GrimTrigger,
+    "Identity Check" = IdentityCheck)
+  
+  
+  # Game Tab -----
+  # Filters -----
+  output$Player1_Strategy <- renderUI({
+    pickerInput("Player1_Strategy", "Select Player 1's Strategy",
+                choices = names(decision_rules))
   })
   
-  
-  # Reactive data ----
-  reactive_country_data <- reactive({
-    req(input$country_filter)
-    filtered <- (input$country_filter == "All" | country_dat2$Country == input$country_filter) &
-      (input$region_filter == "All" | country_dat2$Region == input$region_filter)
-    country_dat2[filtered, , drop = FALSE]
+  output$Player2_Strategy <- renderUI({
+    pickerInput("Player2_Strategy", "Select Player 2's Strategy",
+                choices = names(decision_rules))
   })
   
-  
-  # Country table ----
-  output$aggregate_table <- renderDT({
-    data <- reactive_country_data() %>%
-      select(
-        Country,
-        Region,
-        Population,
-        "World Bank income group" = WorldBank_income_group,
-        "V-Dem regime type" = `V.Dem_regime_type`,
-        "WJP Rule of Law Index ranking (1-140)" = WJP_Rule_Law_Index_ranking,
-        "Internet Penetration" = Internet_penetration,
-        "Freedom House internet freedom status" = FreedomHouse_internet_freedom_status,
-        "V-Dem government attempts at internet censorship (0-4 scale)" = V.Dem_gov_attempts_internet_censorship,
-        "Tortoise Global AI Index ranking (1-62)" = Tortoise_Global_AI_Index_ranking,
-        "V-Dem Freedom of Expression and Alt. Sources of Information Index (0-1 scale)" = V.Dem_Freedom_Expression_Alt_Sources_Info_Index,
-        "RSF Global Press Freedom Index ranking (1-180)" = RSF_Global_Press_Freedom_Index_ranking,
-        "RISJ overall trust in the news percentage" = RISJ_overall_trust_news_percentage,
-        "V-Dem degree of journalist harassment (0-4 scale)" = V.Dem_degree_journalist_harassment,
-        "CPJ count of journalists imprisoned or killed (yearly)" = CPJ_count_journalists_imprisoned_killed
-      )
-    
-    # Modify column names with hyperlinks
-    col_names <- colnames(data)
-    col_names[which(col_names == "Region")] <- '<a href="https://unstats.un.org/unsd/methodology/m49/" target="_blank">Region</a>'
-    col_names[which(col_names == "Population")] <- '<a href="https://data.worldbank.org/indicator/SP.POP.TOTL" target="_blank">Population</a>'
-    col_names[which(col_names == "World Bank income group")] <- '<a href="https://datatopics.worldbank.org/world-development-indicators/the-world-by-income-and-region.html" target="_blank">World Bank income group</a>'
-    col_names[which(col_names == "V-Dem regime type")] <- '<a href="https://v-dem.net/documents/29/V-dem_democracyreport2023_lowres.pdf" target="_blank">V-Dem regime type</a>'
-    col_names[which(col_names == "WJP Rule of Law Index ranking (1-140)")] <- '<a href="https://worldjusticeproject.org/rule-of-law-index/global" target="_blank">WJP Rule of Law Index ranking (1-140)</a>'
-    col_names[which(col_names == "Internet Penetration")] <- '<a href="https://www.internetworldstats.com/stats1.htm" target="_blank">Internet Penetration</a>'
-    col_names[which(col_names == "Freedom House internet freedom status")] <- '<a href="https://freedomhouse.org/reports/freedom-world/freedom-world-research-methodology" target="_blank">Freedom House internet freedom status<a/>'
-    col_names[which(col_names == "V-Dem government attempts at internet censorship (0-4 scale)")] <- '<a href="https://v-dem.net/data/the-v-dem-dataset/" target="_blank">V-Dem government attempts at internet censorship (0-4 scale)<a/>'
-    col_names[which(col_names == "Tortoise Global AI Index ranking (1-62)")] <- '<a href="https://www.tortoisemedia.com/intelligence/global-ai/" target="_blank">Tortoise Global AI Index ranking (1-62)</a>'
-    col_names[which(col_names == "V-Dem Freedom of Expression and Alt. Sources of Information Index (0-1 scale)")] <- '<a href="https://v-dem.net/data/the-v-dem-dataset/" target="_blank">V-Dem Freedom of Expression and Alt. Sources of Information Index (0-1 scale)<a/>'
-    col_names[which(col_names == "RSF Global Press Freedom Index ranking (1-180)")] <- '<a href="https://rsf.org/en/methodology-used-compiling-world-press-freedom-index-2023?year=2023&data_type=general" target="_blank">RSF Global Press Freedom Index ranking (1-180)<a/>'
-    col_names[which(col_names == "RISJ overall trust in the news percentage")] <- '<a href="https://reutersinstitute.politics.ox.ac.uk/digital-news-report/2023" target="_blank">RISJ overall trust in the news percentatge<a/>'
-    col_names[which(col_names == "V-Dem degree of journalist harassment (0-4 scale)")] <- '<a href="https://v-dem.net/data/the-v-dem-dataset/" target="_blank">V-Dem degree of journalist harassment (0-4 scale)<a/>'
-    col_names[which(col_names == "CPJ count of journalists imprisoned or killed (yearly)")] <- '<a href="https://cpj.org/2022/12/attacks-on-the-press-in-2022/#interact" target="_blank">CPJ count of journalists imprisoned or killed (yearly)<a/>'
-    
-    datatable(
-      data,
-      rownames = FALSE,
-      escape = FALSE, # Allow HTML
-      options = list(paging = TRUE,
-                     scrollY = "30vh",
-                     autoWidth = FALSE,
-                     scrollX = TRUE,
-                     pageLength = 10),
-      colnames = col_names
-    )
+  output$Number_Rounds <- renderUI({fluidPage(
+    numericInput("Number_Rounds", "Number of Rounds:", 200, min = 50, max = 2000),
+    verbatimTextOutput("rounds"))
   })
   
 
+  # Reactive Data -----
   
-  
-  ####
-  # Region filter
-  output$region_filter <- renderUI({
-    region_choices <- c("All", sort(unique(country_dat2$Region)))
-    pickerInput("region_filter", "Select Region",
-                choices = region_choices)
-  })
-  
-  
-  # Value box
-  output$vb_table_count <- renderValueBox({
-    country_count <- reactive_country_data() %>%
-      nrow()
+  reactive_game_results <- eventReactive(input$button, {
+    player1_strategy_name <- input$Player1_Strategy
+    player2_strategy_name <- input$Player2_Strategy
+    rounds <- input$Number_Rounds
     
-    valueBox(value = format(country_count, big.mark = ","), subtitle = "Number of Countries Selected", color = "black") #icon = icon("table")
-  })
-  
-  
-  # Map tab ----
-  output$map_filter <- renderUI({
-    map_choices <- c("Internet penetration (%)", "V-Dem gov attempts internet censorship (0-4 scale)", 
-                     "V-Dem degree journalist harassment (0-4 scale)", "V-Dem Freedom of Expression Index (0-1 scale)")
+    req(player1_strategy_name, player2_strategy_name, rounds)
     
-    pickerInput("map_filter", "Select Data Column to Update Shading in Map",
-                choices = map_choices)
-  })
-  
-  
-  # Create map object
-  map <- joinCountryData2Map(country_dat, joinCode = "NAME", nameJoinColumn = "Country_Map", nameCountryColumn = "Country_Map", verbose = F)
-  
-  # Add in Gaza information manually -- some reason does not merge correctly
-  map@data$Country_Map[196] <- "Gaza"
-  map@data$Internet_penetration2[196] <- 75
-  map@data$V.Dem_gov_attempts_internet_censorship[196] <- 2.03
-  map@data$V.Dem_degree_journalist_harassment[196] <- 0.86
-  map@data$V.Dem_Freedom_Expression_Alt_Sources_Info_Index[196] <- 0.29
+    player1_strategy <- decision_rules[[player1_strategy_name]]
+    player2_strategy <- decision_rules[[player2_strategy_name]]
     
-  
-  # Render reactive filter for map; selected by user
-  user_decision <- reactive({
-    switch(input$map_filter,
-           "Internet penetration (%)" = map$Internet_penetration2,
-           "V-Dem gov attempts internet censorship (0-4 scale)" = map$V.Dem_gov_attempts_internet_censorship,
-           "V-Dem degree journalist harassment (0-4 scale)" = map$V.Dem_degree_journalist_harassment,
-           "V-Dem Freedom of Expression Index (0-1 scale)" = map$V.Dem_Freedom_Expression_Alt_Sources_Info_Index)
+    isolate(play_game(player1_strategy, player2_strategy, rounds))
+    
   })
   
-  # Render leaflet map
-  output$worldmap <- renderLeaflet({
-    leaflet(options = leafletOptions(minZoom = 2.5)) #%>%
-              #addMiniMap()
+  output$text <- renderText("Press the 'Play Game' button to begin.")
+  
+  # Results Table -----
+  output$results_table <- renderDT({
+    results <- reactive_game_results()
+    if(!is.data.frame(results)){
+      results <- as.data.frame(results)
+    }
+    results %>%
+      select(Round,
+             "Player 1" = Player1,
+             "Player 2" = Player2,
+             "Player 1 Payoff" = Player1_Payoff,
+             "Player 2 Payoff" = Player2_Payoff,
+             "Player 1 Cumulative" = Player1_Cumulative,
+             "Player 2 Cumulative" = Player2_Cumulative,
+             "Combined Payoff" = Total_Payoff,
+             "Cumulative Payoff" = Cumulative_Payoff) %>%
+    datatable(results,
+              rownames = FALSE,
+              escape = FALSE, # Allow HTML
+              options = list(paging = TRUE,
+                             scrollY = "30vh",
+                             autoWidth = FALSE,
+                             scrollX = TRUE,
+                             pageLength = 10))
   })
- 
   
-  # Define color palette (https://rstudio.github.io/leaflet/colors.html)
-  pal <- colorBin("Greens", domain = NULL, bins = 9) 
-
+  # Value Boxes -----
+  # Player 1 Cumulative Payoff
+    output$Player1_Cumulative <- renderValueBox({
+      cumulative <- reactive_game_results()$Player1_Cumulative[nrow(reactive_game_results())]
+      
+    valueBox(value = format(cumulative, big.mark = ","), color = "red", subtitle = "Player 1's Cumulative Payoff")
+  })
   
-  # Generate map; color fill by user input
-  observe({
-    if(!is.null(input$map_filter)){
-      leafletProxy("worldmap", data = map) %>%
-        addTiles() %>% 
-        clearShapes() %>%
-        setView(lng = 10.00, lat = 22.00, zoom = 2) %>%
-        addPolygons(fill = TRUE,
-                    fillColor = ~pal(user_decision()), # Key
-                    weight = 1,
-                    opacity = .5,
-                    color = "white",
-                    dashArray = "3",
-                    fillOpacity = 0.7,
-                    highlight = highlightOptions(
-                      weight = 5,
-                      color = "white",
-                      dashArray = "3",
-                      fillOpacity = .8,
-                      bringToFront = TRUE),
-                      label = ~paste(as.character(map$NAME), # Consider altering country label here
-                      " Score: ", as.character(user_decision()))
-                    )
-        }
-    })
+  # Player 2 Cumulative Payoff
+  output$Player2_Cumulative <- renderValueBox({
+    cumulative <- reactive_game_results()$Player2_Cumulative[nrow(reactive_game_results())]
+    
+    
+    valueBox(value = format(cumulative, big.mark = ","), color = "blue", subtitle = "Player 2's Cumulative Payoff")
+  })
+  
+  # Total Cumulative Payoff
+  output$Game_Cumulative <- renderValueBox({
+    cumulative <- reactive_game_results()$Cumulative_Payoff[nrow(reactive_game_results())]
+    
+    valueBox(value = format(cumulative, big.mark = ","), color = "black", subtitle = "Total Cumulative Payoff")
+  })
+  
+  # Category Count Bar -----
+  output$game_line_plot <- renderPlot({
+    ggplot(data = reactive_game_results(), mapping = aes(x = Round)) + 
+      geom_line(aes(y = Player1_Cumulative, color = 'Player 1'), show.legend = TRUE) + 
+      geom_line(aes(y = Player2_Cumulative, color = 'Player 2'), show.legend = TRUE) +
+      geom_abline(slope = 3, intercept = 0, color = 'black', lty = 3) + 
+      ylim(c(1, 3 * nrow(reactive_game_results()))) +
+      ylab("A Player's Cumulative Payoff") +
+      theme_classic() +
+      scale_color_manual(values = c("Player 1" = "red", "Player 2" = "blue"),
+                         name = "Player") + 
+      theme(legend.position = c(.15, .80),
+            legend.title = element_text(size = 14), 
+            legend.text = element_text(size = 12))
+  })
+  
 }
-
-
 # Run the application 
 shinyApp(ui = ui, server = server)
+
