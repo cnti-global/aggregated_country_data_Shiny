@@ -85,7 +85,6 @@ ui <- dashboardPage(skin = "black",
     font-weight: 400;
       }
     ')),
-    tags$head(tags$link(rel = "tab icon", href = "favicon.ico")),
     tags$style(HTML('
         .skin-black .main-header .navbar {
     background-color: #A6A6A6;
@@ -117,8 +116,8 @@ ui <- dashboardPage(skin = "black",
             box(width = 5, style = "height:175px;", solidHeader = TRUE, title = "Created by CNTI",
                 tags$figure(
                   style="text-align: center;",
-                  tags$img(src = "CNTI_logo_tagline_redline.png",
-                           width = 425)))),
+                  tags$img(src = "CNTI_logo.png",
+                           width = 175)))),
           
           fluidRow(
             box(width = 12, solidHeader = TRUE, title = "Table",
@@ -268,8 +267,6 @@ server <- function(input, output) {
   
 
   
-  
-  ####
   # Region filter
   output$region_filter <- renderUI({
     region_choices <- c("All", sort(unique(country_dat2$Region)))
@@ -300,13 +297,18 @@ server <- function(input, output) {
   # Create map object
   map <- joinCountryData2Map(country_dat, joinCode = "NAME", nameJoinColumn = "Country_Map", nameCountryColumn = "Country_Map", verbose = F)
   
-  # Add in Gaza information manually -- some reason does not merge correctly
-  map@data$Country_Map[196] <- "Gaza"
+  # Add in Palestine & Gaza information manually -- some reason does not merge correctly
+  map@data$Country[172] <- "Palestine - West Bank"
+  map@data$Country[196] <- "Palestine - Gaza"
   map@data$Internet_penetration2[196] <- 75
   map@data$V.Dem_gov_attempts_internet_censorship[196] <- 2.03
   map@data$V.Dem_degree_journalist_harassment[196] <- 0.86
   map@data$V.Dem_Freedom_Expression_Alt_Sources_Info_Index[196] <- 0.29
     
+  # Alter name of Morocco / Western Sahara to Morocco (keeps original combined label for W. Sahara)
+  map@data$Country[100] <- "Morocco"
+  
+  
   
   # Render reactive filter for map; selected by user
   user_decision <- reactive({
@@ -316,6 +318,7 @@ server <- function(input, output) {
            "V-Dem degree journalist harassment (0-4 scale)" = map$V.Dem_degree_journalist_harassment,
            "V-Dem Freedom of Expression Index (0-1 scale)" = map$V.Dem_Freedom_Expression_Alt_Sources_Info_Index)
   })
+  
   
   # Render leaflet map
   output$worldmap <- renderLeaflet({
@@ -348,7 +351,7 @@ server <- function(input, output) {
                       dashArray = "3",
                       fillOpacity = .8,
                       bringToFront = TRUE),
-                      label = ~paste(as.character(map$NAME), # Consider altering country label here
+                      label = ~paste(as.character(map$Country), # Consider altering country label here
                       " Score: ", as.character(user_decision()))
                     )
         }
