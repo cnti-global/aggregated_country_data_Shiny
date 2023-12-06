@@ -35,12 +35,11 @@ library(ggplot2)
 # Define UI for application that draws a histogram
 ui <- dashboardPage(skin = "black",
                     dashboardHeader(
-                      title = "Mapping Data"
+                      title = ""
                     ),
                     
-                    
                     # Create Tabs on Left Side of Page
-                    dashboardSidebar(
+                    dashboardSidebar(collapsed = TRUE,
                       sidebarMenu(
                         menuItem(
                           tabName = "map",
@@ -204,6 +203,7 @@ server <- function(input, output) {
         )
     }
   })
+  
 }
 
 
